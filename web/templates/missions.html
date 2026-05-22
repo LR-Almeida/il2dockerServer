@@ -1,0 +1,271 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-map"></i> Mission Rotation</h4>
+  <span class="text-muted small">Select missions, set turn times, then save and restart.</span>
+</div>
+
+<!-- Upload card -->
+<div class="card mb-3 border-secondary">
+  <div class="card-header fw-bold">
+    <i class="bi bi-upload"></i> Upload Mission File
+  </div>
+  <div class="card-body">
+    <form method="post" action="{{ url_for('mission_upload') }}" enctype="multipart/form-data"
+          class="row g-2 align-items-end">
+      <div class="col-md-5">
+        <label class="form-label small">Mission file <span class="text-muted">(.Mission)</span></label>
+        <input type="file" class="form-control form-control-sm" name="mission_file"
+               accept=".Mission,.mission" required>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small">Target folder
+          <span class="text-muted">(inside <code>data/</code>)</span>
+        </label>
+        <select class="form-select form-select-sm" name="folder">
+          <option value="Dogfight">Dogfight</option>
+          <option value="Cooperative">Cooperative</option>
+        </select>
+      </div>
+      <div class="col-md-auto">
+        <button type="submit" class="btn btn-sm btn-primary">
+          <i class="bi bi-cloud-upload"></i> Upload
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if not missions %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle"></i>
+    No <code>.Mission</code> files found in
+    <code>data/Multiplayer/Dogfight/</code> or <code>data/Multiplayer/Cooperative/</code>.
+    Upload one above or place files in those folders manually.
+  </div>
+{% else %}
+
+<!-- Rotation form -->
+<form method="post" id="rotationForm">
+  <div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <span class="fw-bold">Available Missions</span>
+        <div class="form-check form-switch mb-0">
+          <input class="form-check-input" type="checkbox" name="random" id="randomRot"
+                 {% if random_rotation %}checked{% endif %}>
+          <label class="form-check-label" for="randomRot">Random order</label>
+        </div>
+      </div>
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-info me-1"
+                onclick="setMode('Dogfight', true)">
+          <i class="bi bi-check2-square"></i> All Dogfight
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-success me-1"
+                onclick="setMode('Cooperative', true)">
+          <i class="bi bi-check2-square"></i> All Coop
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                onclick="setAll(true)">Select All</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary"
+                onclick="setAll(false)">Deselect All</button>
+      </div>
+    </div>
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead class="table-secondary">
+          <tr>
+            <th style="width:24px"></th>
+            <th style="width:46px" class="text-center">Use</th>
+            <th>Mission Name</th>
+            <th style="width:115px">Mode</th>
+            <th style="width:96px"></th>
+          </tr>
+        </thead>
+        <tbody id="missionTbody">
+          {% set df_missions = missions | selectattr('mode', 'equalto', 'Dogfight') | list %}
+          {% set co_missions = missions | selectattr('mode', 'equalto', 'Cooperative') | list %}
+
+          {% macro mission_rows(group) %}
+          {% for m in group %}
+          {% set is_active = m.path in active_paths %}
+          <tr class="{% if is_active %}table-success{% endif %}" data-mode="{{ m.mode }}">
+            <td class="align-middle text-center drag-handle" style="cursor:grab; color: var(--bs-secondary-color)">
+              <i class="bi bi-grip-vertical"></i>
+            </td>
+            <td class="text-center align-middle">
+              <input class="form-check-input mission-check" type="checkbox"
+                     name="mission" value="{{ m.path }}" data-mode="{{ m.mode }}"
+                     {% if is_active %}checked{% endif %}>
+            </td>
+            <td class="align-middle fw-semibold">
+              {{ m.name }}
+              {% if m.has_msnbin %}
+              <span class="badge bg-warning text-dark ms-1"
+                    title="Using compiled .msnbin — faster server loads">msnbin</span>
+              {% endif %}
+              {% if m.warn_missing_list %}
+              <i class="bi bi-exclamation-triangle-fill text-warning ms-1"
+                 style="cursor:help"
+                 data-bs-toggle="tooltip"
+                 data-bs-placement="right"
+                 title="Language file(s) present ({{ m.lang_exts | join(', ') }}) but no .list file. The server requires a .list file alongside any language files."></i>
+              {% endif %}
+              <div class="text-muted small fw-normal font-monospace">{{ m.path }}</div>
+            </td>
+            <td class="align-middle">
+              <span class="badge {% if m.mode == 'Dogfight' %}bg-info text-dark{% else %}bg-success{% endif %}">
+                {{ m.mode }}
+              </span>
+            </td>
+            <td class="align-middle text-end">
+              {% if m.has_msnbin %}
+              <button type="button" class="btn btn-sm btn-outline-warning me-1"
+                      title="Remove .msnbin and restore original .mission"
+                      data-path="{{ m.path }}"
+                      data-name="{{ m.name }}"
+                      onclick="confirmRemoveMsnbin(this.dataset.path, this.dataset.name)">
+                <i class="bi bi-file-earmark-x"></i>
+              </button>
+              {% endif %}
+              <button type="button" class="btn btn-sm btn-outline-secondary me-1"
+                      title="Add companion files (.msnbin, .list, language files…)"
+                      data-path="{{ m.path }}"
+                      data-name="{{ m.name }}"
+                      onclick="openCompanion(this.dataset.path, this.dataset.name)">
+                <i class="bi bi-file-earmark-plus"></i>
+              </button>
+              <button type="button" class="btn btn-sm btn-outline-danger"
+                      title="Delete this mission file permanently"
+                      data-path="{{ m.path }}"
+                      data-name="{{ m.name }}"
+                      onclick="confirmDelete(this.dataset.path, this.dataset.name)">
+                <i class="bi bi-trash3"></i>
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+          {% endmacro %}
+
+          {% if df_missions %}
+          <tr class="table-secondary">
+            <td colspan="5" class="py-1 px-3">
+              <span class="badge bg-info text-dark">
+                <i class="bi bi-joystick"></i> Dogfight — {{ df_missions | length }} mission(s)
+              </span>
+            </td>
+          </tr>
+          {{ mission_rows(df_missions) }}
+          {% endif %}
+
+          {% if co_missions %}
+          <tr class="table-secondary">
+            <td colspan="5" class="py-1 px-3">
+              <span class="badge bg-success">
+                <i class="bi bi-people-fill"></i> Cooperative — {{ co_missions | length }} mission(s)
+              </span>
+            </td>
+          </tr>
+          {{ mission_rows(co_missions) }}
+          {% endif %}
+
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="mt-3">
+    <button type="submit" class="btn btn-primary">
+      <i class="bi bi-floppy"></i> Save Mission Rotation
+    </button>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+  </div>
+</form>
+
+<!-- Hidden delete form — submitted by JS -->
+<form id="deleteForm" method="post" action="{{ url_for('mission_delete') }}" class="d-none">
+  <input type="hidden" name="path" id="deletePath">
+</form>
+
+<!-- Hidden remove-msnbin form — submitted by JS -->
+<form id="removeMsnbinForm" method="post" action="{{ url_for('mission_remove_msnbin') }}" class="d-none">
+  <input type="hidden" name="path" id="removeMsnbinPath">
+</form>
+
+<!-- Companion upload modal -->
+<div class="modal fade" id="companionModal" tabindex="-1" aria-labelledby="companionModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title" id="companionModalLabel">
+          <i class="bi bi-file-earmark-plus"></i> Add companion file
+        </h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" action="{{ url_for('mission_upload_companion') }}" enctype="multipart/form-data">
+        <div class="modal-body">
+          <p class="small mb-2">Mission: <strong id="companionMissionName"></strong></p>
+          <input type="hidden" name="sds_path" id="companionSdsPath">
+          <label class="form-label small">
+            File <span class="text-muted">(.msnbin, .list, .eng, .spa, …)</span>
+          </label>
+          <input type="file" class="form-control form-control-sm" name="companion_file" required>
+        </div>
+        <div class="modal-footer py-2">
+          <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-sm btn-primary">
+            <i class="bi bi-cloud-upload"></i> Upload
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+  new bootstrap.Tooltip(el);
+});
+function setAll(checked) {
+  document.querySelectorAll('.mission-check').forEach(cb => cb.checked = checked);
+}
+function setMode(mode, checked) {
+  document.querySelectorAll(`.mission-check[data-mode="${mode}"]`)
+    .forEach(cb => cb.checked = checked);
+}
+function confirmDelete(path, name) {
+  if (!confirm(`Delete "${name}"?\n\nThis will permanently remove the file and remove it from the SDS rotation. This cannot be undone.`)) return;
+  document.getElementById('deletePath').value = path;
+  document.getElementById('deleteForm').submit();
+}
+function openCompanion(path, name) {
+  document.getElementById('companionSdsPath').value = path;
+  document.getElementById('companionMissionName').textContent = name;
+  new bootstrap.Modal(document.getElementById('companionModal')).show();
+}
+function confirmRemoveMsnbin(path, name) {
+  if (!confirm(`Remove .msnbin for "${name}"?\n\nThe original .mission will be restored from backup. DServer will recompile the .msnbin on next load.`)) return;
+  document.getElementById('removeMsnbinPath').value = path;
+  document.getElementById('removeMsnbinForm').submit();
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.3/Sortable.min.js"></script>
+<script>
+const tbody = document.getElementById('missionTbody');
+if (tbody) {
+  Sortable.create(tbody, {
+    handle: '.drag-handle',
+    draggable: 'tr:not(.table-secondary)',
+    animation: 150,
+    ghostClass: 'table-active',
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,23 @@
+[KEY = system]
+	numthreads = 4
+
+[KEY = NET]
+	serverport = 28100
+
+[KEY = mods]
+	enabled = 0
+
+[KEY = game]
+	name = My IL-2 GB Server
+	maxplayers = 84
+	passwd =
+	difficulty = 1
+
+[KEY = missionlist]
+
+[KEY = mis_01]
+	enabled = 1
+	path = data/Multiplayer/Dogfight/YourMission.Mission
+	turntime = 0
+	checkairfields = 1
+	refighttime = 0

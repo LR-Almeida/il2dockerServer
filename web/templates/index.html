@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="row g-4 mb-4">
+  <!-- Status card -->
+  <div class="col-md-4">
+    <div class="card h-100 {% if status == 'running' %}border-success{% else %}border-danger{% endif %}">
+      <div class="card-header fw-bold">
+        <i class="bi bi-activity"></i> Server Status
+      </div>
+      <div class="card-body text-center py-4">
+        {% if status == 'running' %}
+          <div class="display-4 text-success mb-2"><i class="bi bi-check-circle-fill"></i></div>
+          <h4 class="text-success">Running</h4>
+          {% if pid %}<p class="text-muted small mb-0">PID {{ pid }}</p>{% endif %}
+        {% else %}
+          <div class="display-4 text-danger mb-2"><i class="bi bi-x-circle-fill"></i></div>
+          <h4 class="text-danger">Stopped</h4>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Server info card -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header fw-bold">
+        <i class="bi bi-info-circle"></i> Server Info
+      </div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-5 text-muted">Name</dt>
+          <dd class="col-7">{{ server_name }}</dd>
+          <dt class="col-5 text-muted">TCP/UDP Port</dt>
+          <dd class="col-7">{{ tcp_port }}</dd>
+          <dt class="col-5 text-muted">Downloader Port</dt>
+          <dd class="col-7">{{ dl_port }}</dd>
+          <dt class="col-5 text-muted">Max Clients</dt>
+          <dd class="col-7">{{ max_clients }}</dd>
+        </dl>
+        <a href="{{ url_for('config') }}" class="btn btn-sm btn-outline-secondary mt-2">
+          <i class="bi bi-pencil"></i> Edit Config
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls card -->
+  <div class="col-md-4">
+    <div class="card h-100">
+      <div class="card-header fw-bold">
+        <i class="bi bi-sliders"></i> Controls
+      </div>
+      <div class="card-body d-grid gap-2">
+        <form method="post" action="{{ url_for('route_start') }}">
+          <button class="btn btn-success w-100"
+                  {% if status == 'running' %}disabled{% endif %}>
+            <i class="bi bi-play-fill"></i> Start Server
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('route_stop') }}"
+              onsubmit="return confirm('Stop the server? All players will be disconnected.')">
+          <button class="btn btn-danger w-100"
+                  {% if status == 'stopped' %}disabled{% endif %}>
+            <i class="bi bi-stop-fill"></i> Stop Server
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('route_restart') }}"
+              onsubmit="return confirm('Restart the server? All players will be disconnected.')">
+          <button class="btn btn-warning w-100">
+            <i class="bi bi-arrow-clockwise"></i> Restart Server
+          </button>
+        </form>
+        <hr class="my-1">
+        <a href="{{ url_for('vnc') }}" class="btn btn-outline-info w-100"
+           {% if status != 'running' %}disabled title="Start the server first"{% endif %}>
+          <i class="bi bi-display"></i> Open DServer Window
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Quick links -->
+<div class="row g-3">
+  <div class="col-md-4">
+    <a href="{{ url_for('missions') }}" class="card text-decoration-none hover-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <i class="bi bi-map display-6 text-info"></i>
+        <div>
+          <div class="fw-bold">Mission Manager</div>
+          <div class="text-muted small">Configure mission rotation</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('logs') }}" class="card text-decoration-none hover-card">
+      <div class="card-body d-flex align-items-center gap-3">
+        <i class="bi bi-terminal display-6 text-warning"></i>
+        <div>
+          <div class="fw-bold">Live Logs</div>
+          <div class="text-muted small">Stream server console output</div>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="{{ url_for('vnc') }}" class="card text-decoration-none hover-card {% if status != 'running' %}opacity-50{% endif %}">
+      <div class="card-body d-flex align-items-center gap-3">
+        <i class="bi bi-display display-6 text-info"></i>
+        <div>
+          <div class="fw-bold">DServer Window</div>
+          <div class="text-muted small">View live server console via browser</div>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+{% endblock %}

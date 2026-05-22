@@ -1,0 +1,18 @@
+# Game files — never commit (too large, not redistributable)
+il2-data/
+
+# Server config — contains credentials
+il2-data/data/server.sds
+
+# Claude Code project files
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo

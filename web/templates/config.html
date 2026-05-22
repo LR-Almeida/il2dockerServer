@@ -1,0 +1,379 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-gear"></i> Server Configuration
+    <small class="text-muted fs-6 ms-2">{{ sds_path if sds_path is defined else '' }}</small>
+  </h4>
+  <span class="text-muted small">Changes require a server restart to take effect.</span>
+</div>
+
+{% macro chk(field) %}{% if v.get(field) %}checked{% endif %}{% endmacro %}
+{% macro val(field, default='') %}{{ v.get(field, default) }}{% endmacro %}
+
+<form method="post">
+<ul class="nav nav-tabs mb-3" id="cfgTabs" role="tablist">
+  <li class="nav-item"><button type="button" class="nav-link active" data-bs-toggle="tab" data-bs-target="#tab-general">General</button></li>
+  <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-network">Network</button></li>
+  <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-rcon">RCON</button></li>
+  <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preset-srv">Preset: Server</button></li>
+  <li class="nav-item"><button type="button" class="nav-link" data-bs-toggle="tab" data-bs-target="#tab-preset-mis">Preset: Mission</button></li>
+  <li class="nav-item"><button type="button" class="nav-link text-warning" data-bs-toggle="tab" data-bs-target="#tab-creds">
+    <i class="bi bi-key"></i> Credentials</button></li>
+</ul>
+
+<div class="tab-content">
+
+  <!-- ── General ─────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade show active" id="tab-general">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Server Name</label>
+        <input type="text" class="form-control" name="ServerName" value="{{ val('ServerName') }}" maxlength="64">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Server Description</label>
+        <input type="text" class="form-control" name="serverDesc" value="{{ val('serverDesc') }}">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Mode</label>
+        {% set mode_val = val('mode', 0)|int %}
+        <select class="form-select" name="mode">
+          <option value="0" {% if mode_val == 0 %}selected{% endif %}>Cooperative</option>
+          <option value="1" {% if mode_val == 1 %}selected{% endif %}>Deathmatch</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Max Clients</label>
+        <input type="number" class="form-control" name="maxClients" value="{{ val('maxClients', 10) }}" min="1" max="128">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Join Password
+          <span class="text-muted small">(blank = public)</span>
+        </label>
+        <input type="text" class="form-control" name="protection" value="{{ val('protection') }}" autocomplete="off">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Ranked</label>
+        <select class="form-select" name="ranked">
+          <option value="0" {% if val('ranked','0')|string == '0' %}selected{% endif %}>0 — Unranked</option>
+          <option value="1" {% if val('ranked','0')|string == '1' %}selected{% endif %}>1 — Ranked</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Ban Timeout (s)</label>
+        <input type="number" class="form-control" name="banTimeout" value="{{ val('banTimeout', 900) }}" min="0">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Lobby Timer (s)</label>
+        <input type="number" class="form-control" name="lobbyTimer" value="{{ val('lobbyTimer', 30) }}" min="0">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Coop Quorum</label>
+        <input type="number" class="form-control" name="coopQuorum" value="{{ val('coopQuorum', 0) }}" min="0">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">Shutdown Loads
+          <span class="text-muted small">(-1 = never)</span>
+        </label>
+        <input type="number" class="form-control" name="ShutdownLoads" value="{{ val('ShutdownLoads', -1) }}">
+      </div>
+      <div class="col-12">
+        <label class="form-label">SRS Comm Server
+          <span class="text-muted small">(IP:Port or URL:Port, blank to disable)</span>
+        </label>
+        <input type="text" class="form-control" name="srsCommServer" value="{{ val('srsCommServer') }}" placeholder="255.255.255.255:5002">
+      </div>
+      <div class="col-12 d-flex gap-4">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="TacviewRecord" id="tacview" {{ chk('TacviewRecord') }}>
+          <label class="form-check-label" for="tacview">Tacview Record</label>
+        </div>
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="allowMouseJoy" id="mousejoy" {{ chk('allowMouseJoy') }}>
+          <label class="form-check-label" for="mousejoy">Allow Mouse Joystick</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Network ──────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-network">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">Server IP
+          <span class="text-muted small">(LAN IP of the host, or 0.0.0.0 to bind all)</span>
+        </label>
+        <input type="text" class="form-control" name="ServerIP" value="{{ val('ServerIP') }}" placeholder="0.0.0.0">
+      </div>
+      <div class="col-md-6">
+        <div class="form-check form-switch mt-4 pt-2">
+          <input class="form-check-input" type="checkbox" name="ExternalIP" id="extip" {{ chk('ExternalIP') }}>
+          <label class="form-check-label" for="extip">Use External IP (auto-detect public IP)</label>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">TCP Port</label>
+        <input type="number" class="form-control" name="TCPPort" value="{{ val('TCPPort', 28000) }}" min="1024" max="65535">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">UDP Port</label>
+        <input type="number" class="form-control" name="UDPPort" value="{{ val('UDPPort', 28000) }}" min="1024" max="65535">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Downloader Port (HTTP)</label>
+        <input type="number" class="form-control" name="DownloaderPort" value="{{ val('DownloaderPort', 28100) }}" min="1024" max="65535">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Download Limit (B/s)
+          <span class="text-muted small">(0 = unlimited)</span>
+        </label>
+        <input type="number" class="form-control" name="DownloadLimit" value="{{ val('DownloadLimit', 50000) }}" min="0">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Upload Limit (B/s)</label>
+        <input type="number" class="form-control" name="UploadLimit" value="{{ val('UploadLimit', 50000) }}" min="0">
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Max Client Ping
+          <span class="text-muted small">(-1 = no limit)</span>
+        </label>
+        <input type="number" class="form-control" name="maxClientPing" value="{{ val('maxClientPing', -1) }}">
+      </div>
+      <div class="col-12">
+        <div class="alert alert-info py-2 mb-0">
+          <i class="bi bi-info-circle"></i>
+          Make sure the ports above match the Docker port mappings in
+          <code>docker-compose.yml</code>. Both TCP and UDP must be forwarded on your router.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── RCON ─────────────────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-rcon">
+    <div class="row g-3">
+      <div class="col-12">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="RconStart" id="rconstart" {{ chk('RconStart') }}>
+          <label class="form-check-label" for="rconstart">Enable RCON</label>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">RCON IP <span class="text-muted small">(blank = all interfaces)</span></label>
+        <input type="text" class="form-control" name="RconIP" value="{{ val('RconIP') }}" placeholder="">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">RCON Port</label>
+        <input type="number" class="form-control" name="RconPort" value="{{ val('RconPort', 8991) }}" min="1024" max="65535">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">RCON Login</label>
+        <input type="text" class="form-control" name="RconLogin" value="{{ val('RconLogin') }}" autocomplete="off">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">RCON Password <span class="text-muted small">(leave blank to keep current)</span></label>
+        <input type="password" class="form-control" name="RconPassword" placeholder="••••••••" autocomplete="new-password">
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Preset: Server ───────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-preset-srv">
+    <div class="row g-3">
+      <div class="col-md-3">
+        <label class="form-label">Difficulty Preset</label>
+        {% set p = val('preset', 1)|int %}
+        <select class="form-select" name="preset" id="presetSelect">
+          <option value="0" {% if p == 0 %}selected{% endif %}>Custom — all settings free</option>
+          <option value="1" {% if p == 1 %}selected{% endif %}>Normal — standard difficulty</option>
+          <option value="2" {% if p == 2 %}selected{% endif %}>Expert — full realism</option>
+        </select>
+        <div class="form-text mt-1" id="presetHint"></div>
+      </div>
+    </div>
+    <hr class="my-3">
+    <div class="row g-2">
+      {% set srv_toggles = [
+        ('killNotification',         'Kill Notification'),
+        ('friendlyFireReturn',       'Friendly Fire Return'),
+        ('finishMissionIfLanded',    'Finish Mission If Landed'),
+        ('lockPayloads',             'Lock Payloads'),
+        ('lockSkins',                'Lock Skins'),
+        ('lockFuelLoads',            'Lock Fuel Loads'),
+        ('lockWeaponModes',          'Lock Weapon Modes'),
+        ('lockPlayerTankAIaimAtObj', 'Lock Tank AI Aim At Obj'),
+        ('lockInjectors',            'Lock Injectors'),
+        ('AllowExtCamSpectator',     'External Cam (Spectator)'),
+        ('AllowExtCamPlayer',        'External Cam (Player)'),
+        ('coalitionsBalancer',       'Coalitions Balancer'),
+        ('allowMarshals',            'Allow Marshals'),
+        ('useMarshalsRestriction',   'Use Marshals Restriction'),
+      ] %}
+      {% for name, label in srv_toggles %}
+      <div class="col-md-4 col-lg-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ name }}" {{ chk(name) }}>
+          <label class="form-check-label" for="{{ name }}">{{ label }}</label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <hr class="my-3">
+    <div class="row g-3">
+      {% set timeouts = [
+        ('penaltyTimeout',         'Penalty Timeout (s)'),
+        ('respawnTimeout',         'Respawn Timeout (s)'),
+        ('coalitionChangeTimeout', 'Coalition Change Timeout (s)'),
+        ('finishMissionTimeout',   'Finish Mission Timeout (s)'),
+        ('missionEndTimeout',      'Mission End Timeout (s)'),
+        ('idleKickTimeout',        'Idle Kick Timeout (s)'),
+        ('tdmPointsPerRound',      'TDM Points Per Round'),
+        ('tdmRoundTime',           'TDM Round Time (s)'),
+      ] %}
+      {% for name, label in timeouts %}
+      <div class="col-md-3">
+        <label class="form-label small">{{ label }}</label>
+        <input type="number" class="form-control form-control-sm" name="{{ name }}" value="{{ val(name, 0) }}" min="0">
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Preset: Mission ──────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-preset-mis">
+    <div id="presetLockBanner" class="alert alert-info py-2 mb-3 d-none">
+      <i class="bi bi-lock-fill"></i>
+      Mission settings are controlled by the selected preset. Switch to <strong>Custom</strong> on the Preset: Server tab to edit them freely.
+    </div>
+    <div class="row g-2">
+      {% set mis_toggles = [
+        ('objectIcons',             'Object Icons'),
+        ('navigationIcons',         'Navigation Icons'),
+        ('aimingHelp',              'Aiming Help'),
+        ('courseWeaponsAimingHelp', 'Course Weapons Aiming Help'),
+        ('padlock',                 'Padlock'),
+        ('simpleDevices',           'Simple Devices'),
+        ('techChatMessages',        'Tech Chat Messages'),
+        ('techChatAdvices',         'Tech Chat Advices'),
+        ('easyFlight',              'Easy Flight'),
+        ('autoCoordination',        'Auto Coordination'),
+        ('autoThrottle',            'Auto Throttle'),
+        ('autoPilot',               'Auto Pilot'),
+        ('autoThrottleLimit',       'Auto Throttle Limit'),
+        ('autoMix',                 'Auto Mix'),
+        ('autoRadiator',            'Auto Radiator'),
+        ('noMoment',                'No Moment'),
+        ('noWind',                  'No Wind'),
+        ('noMisfire',               'No Misfire'),
+        ('noBreak',                 'No Break'),
+        ('invulnerability',         'Invulnerability'),
+        ('simplePhysiology',        'Simple Physiology'),
+        ('unlimitFuel',             'Unlimited Fuel'),
+        ('unlimitAmmo',             'Unlimited Ammo'),
+        ('engineNoStop',            'Engine No Stop'),
+        ('hotEngine',               'Hot Engine'),
+        ('alterVisibility',         'Alter Visibility'),
+      ] %}
+      {% for name, label in mis_toggles %}
+      <div class="col-md-4 col-lg-3">
+        <div class="form-check form-switch">
+          <input class="form-check-input" type="checkbox" name="{{ name }}" id="{{ name }}" {{ chk(name) }}>
+          <label class="form-check-label" for="{{ name }}">{{ label }}</label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- ── Credentials ──────────────────────────────────────────────────── -->
+  <div class="tab-pane fade" id="tab-creds">
+    <div class="alert alert-warning mb-3">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      These are your <strong>IL-2 account credentials</strong> used by DServer.exe to
+      authenticate with the IL-2 matchmaking servers. They are stored in the SDS file.
+    </div>
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label class="form-label">IL-2 Account Login (email)</label>
+        <input type="email" class="form-control" name="login" value="{{ val('login') }}" autocomplete="off">
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">IL-2 Account Password
+          <span class="text-muted small">(leave blank to keep current)</span>
+        </label>
+        <input type="password" class="form-control" name="password" placeholder="••••••••" autocomplete="new-password">
+      </div>
+    </div>
+  </div>
+
+</div><!-- /tab-content -->
+
+<div class="mt-4 border-top pt-3">
+  <button type="submit" class="btn btn-primary">
+    <i class="bi bi-floppy"></i> Save Configuration
+  </button>
+  <a href="{{ url_for('index') }}" class="btn btn-outline-secondary ms-2">Cancel</a>
+</div>
+</form>
+
+{% block scripts %}
+<style>
+.preset-locked { opacity: 0.45; pointer-events: none; }
+</style>
+<script>
+const PRESETS = {
+  1: {
+    objectIcons: true, navigationIcons: true, aimingHelp: false,
+    courseWeaponsAimingHelp: false, padlock: true, simpleDevices: true,
+    techChatMessages: true, techChatAdvices: false, AllowExtCamPlayer: true,
+    easyFlight: false, autoCoordination: false, autoThrottle: false,
+    autoPilot: true, autoThrottleLimit: true, autoMix: true, autoRadiator: true,
+    noMoment: false, noWind: false, noMisfire: false, noBreak: false,
+    invulnerability: false, simplePhysiology: false, unlimitFuel: false,
+    unlimitAmmo: false, engineNoStop: false, hotEngine: true, alterVisibility: false,
+  },
+  2: {
+    objectIcons: false, navigationIcons: true, aimingHelp: false,
+    courseWeaponsAimingHelp: false, padlock: false, simpleDevices: false,
+    techChatMessages: true, techChatAdvices: true, AllowExtCamPlayer: false,
+    easyFlight: false, autoCoordination: false, autoThrottle: false,
+    autoPilot: false, autoThrottleLimit: false, autoMix: false, autoRadiator: false,
+    noMoment: false, noWind: false, noMisfire: false, noBreak: false,
+    invulnerability: false, simplePhysiology: false, unlimitFuel: false,
+    unlimitAmmo: false, engineNoStop: false, hotEngine: true, alterVisibility: true,
+  }
+};
+
+function applyPreset(val) {
+  const preset = parseInt(val);
+  const locked = preset !== 0;
+  const banner  = document.getElementById('presetLockBanner');
+  const hint    = document.getElementById('presetHint');
+
+  if (banner) banner.classList.toggle('d-none', !locked);
+  if (hint)   hint.textContent = locked
+    ? (preset === 1 ? 'Normal: standard visibility aids, autopilot on.' : 'Expert: full realism, no assistance.')
+    : '';
+
+  const fields = locked ? PRESETS[preset] : {};
+  Object.keys(PRESETS[1]).forEach(name => {
+    document.querySelectorAll(`[name="${name}"]`).forEach(el => {
+      if (locked) {
+        el.checked = fields[name];
+        el.closest('.form-check')?.classList.add('preset-locked');
+      } else {
+        el.closest('.form-check')?.classList.remove('preset-locked');
+      }
+    });
+  });
+}
+
+const sel = document.getElementById('presetSelect');
+if (sel) {
+  sel.addEventListener('change', () => applyPreset(sel.value));
+  applyPreset(sel.value);
+}
+</script>
+{% endblock %}
+{% endblock %}

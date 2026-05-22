@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+  /* Remove container padding so the iframe fills the page */
+  .container-fluid { padding: 0 !important; overflow: hidden; }
+</style>
+
+<div style="width:100%; height:calc(100vh - 56px);">
+  <iframe
+    id="vncFrame"
+    src="http://{{ vnc_host }}:{{ vnc_port }}/vnc_lite.html?autoconnect=true&resize=scale&reconnect=true&reconnect_delay=2000"
+    style="width:100%; height:100%; border:none; display:block;"
+    allowfullscreen>
+  </iframe>
+</div>
+{% endblock %}

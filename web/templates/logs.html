@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0"><i class="bi bi-terminal"></i> Server Logs</h4>
+  <div class="d-flex gap-2 align-items-center">
+    <button id="pauseBtn" class="btn btn-sm btn-outline-warning">
+      <i class="bi bi-pause-fill"></i> Pause
+    </button>
+    <button class="btn btn-sm btn-outline-secondary" onclick="clearLog()">
+      <i class="bi bi-trash"></i> Clear View
+    </button>
+  </div>
+</div>
+
+<!-- Log file selector -->
+<div class="card mb-3">
+  <div class="card-body py-2">
+    <form method="get" class="row g-2 align-items-center">
+      <div class="col-auto">
+        <label class="col-form-label col-form-label-sm fw-semibold">Log file:</label>
+      </div>
+      <div class="col">
+        <select class="form-select form-select-sm" name="file" onchange="this.form.submit()">
+          {% if log_files %}
+            {% for label, path in log_files %}
+            <option value="{{ path }}" {% if path == active_file %}selected{% endif %}>
+              {{ label }}
+            </option>
+            {% endfor %}
+          {% else %}
+            <option value="">No log files found — start the server first</option>
+          {% endif %}
+        </select>
+      </div>
+      <div class="col-auto text-muted small">
+        <span id="conn-status" class="badge bg-secondary">Connecting…</span>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-body p-0">
+    <pre id="log-output" class="log-box p-3 mb-0"></pre>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MAX_LINES  = 500;
+const logEl      = document.getElementById('log-output');
+const pauseBtn   = document.getElementById('pauseBtn');
+const connStatus = document.getElementById('conn-status');
+const activeFile = {{ active_file | tojson }};
+
+let paused     = false;
+let lineBuffer = [];
+
+pauseBtn.addEventListener('click', () => {
+  paused = !paused;
+  pauseBtn.innerHTML = paused
+    ? '<i class="bi bi-play-fill"></i> Resume'
+    : '<i class="bi bi-pause-fill"></i> Pause';
+  pauseBtn.className = paused ? 'btn btn-sm btn-warning' : 'btn btn-sm btn-outline-warning';
+});
+
+function clearLog() {
+  lineBuffer = [];
+  logEl.textContent = '';
+}
+
+function appendLine(text) {
+  lineBuffer.push(text);
+  if (lineBuffer.length > MAX_LINES) lineBuffer.shift();
+  logEl.textContent = lineBuffer.join('\n');
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+const streamUrl = '/logs/stream?file=' + encodeURIComponent(activeFile);
+const evtSource = new EventSource(streamUrl);
+
+evtSource.onopen = () => {
+  connStatus.className   = 'badge bg-success';
+  connStatus.textContent = 'Connected';
+};
+evtSource.onmessage = (evt) => {
+  if (!paused) appendLine(evt.data);
+};
+evtSource.onerror = () => {
+  connStatus.className   = 'badge bg-danger';
+  connStatus.textContent = 'Disconnected — retrying…';
+};
+</script>
+{% endblock %}

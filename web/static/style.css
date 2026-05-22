@@ -1,0 +1,26 @@
+/* Log terminal */
+.log-box {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Courier New', monospace;
+  font-size: 0.8rem;
+  min-height: 500px;
+  max-height: 70vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Clickable card links */
+.hover-card {
+  transition: border-color 0.15s, background-color 0.15s;
+}
+.hover-card:hover {
+  border-color: var(--bs-info) !important;
+  background-color: rgba(255,255,255,0.04);
+}
+
+/* Table row highlight */
+.table-success td {
+  background-color: rgba(25, 135, 84, 0.15) !important;
+}
