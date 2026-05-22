@@ -25,62 +25,7 @@ A Docker-based dedicated server for **IL-2 Great Battles** with a built-in Flask
 
 ---
 
-## Step 1 — Get the IL-2 Dedicated Server Files
-
-The IL-2 dedicated server files can be obtained in two ways. You will need a licensed IL-2 Great Battles account regardless of which method you choose.
-
-### Option A — Download directly with SteamCMD (Linux)
-
-This downloads the server files straight into `il2-data/` without needing a Windows machine.
-
-1. Install SteamCMD:
-   ```bash
-   sudo apt-get install steamcmd
-   ```
-2. Run SteamCMD and download the dedicated server (replace `<APPID>` with your IL-2 title's dedicated server App ID, found on SteamDB):
-   ```bash
-   steamcmd +force_install_dir /path/to/il2dockerServer/il2-data \
-            +login your_steam_username \
-            +app_update <APPID> validate \
-            +quit
-   ```
-3. Enter your Steam password when prompted. If Steam Guard is enabled, you'll also be asked for the code.
-
-### Option B — Download on Windows, then copy to Linux
-
-1. Install the IL-2 dedicated server on a Windows PC via Steam or the official installer
-2. Copy the installation folder to your Linux machine using one of:
-
-   **SCP (SSH):**
-   ```bash
-   scp -r "C:\path\to\il2-server\*" user@your-linux-ip:/path/to/il2dockerServer/il2-data/
-   ```
-
-   **Google Drive / cloud sync:**
-   Zip the installation folder, upload to Drive, download on the Linux machine and extract into `il2-data/`.
-
-   **Network share / USB:**
-   Copy via any shared folder or external drive, then move the contents into `il2-data/`.
-
-The resulting folder structure looks like this:
-
-```
-<il2-installation>/
-├── bin/
-│   └── game/
-│       ├── DServer.exe       ← the server binary
-│       └── *.dll             ← many game DLLs (RSE.dll, etc.)
-├── data/
-│   ├── Multiplayer/
-│   │   ├── Dogfight/         ← put your .Mission files here
-│   │   └── Cooperative/      ← put your .Mission files here
-│   └── ... (other game data)
-└── ...
-```
-
----
-
-## Step 2 — Clone the Repository
+## Step 1 — Clone the Repository
 
 ```bash
 git clone https://github.com/LR-Almeida/il2dockerServer.git
@@ -89,27 +34,56 @@ cd il2dockerServer
 
 ---
 
-## Step 3 — Place the Game Files
+## Step 2 — Get the IL-2 Dedicated Server Files
 
-Copy (or move) your entire IL-2 dedicated server installation into the `il2-data/` folder inside the repository:
+You need a licensed IL-2 Great Battles account regardless of which method you use. Both options place the files directly into `il2-data/` inside the cloned repository.
 
+### Option A — SteamCMD (download directly on the Linux machine)
+
+1. Install SteamCMD:
+   ```bash
+   sudo apt-get install steamcmd
+   ```
+2. Run SteamCMD and download the dedicated server into `il2-data/` (replace `<APPID>` with your IL-2 title's dedicated server App ID, found on SteamDB):
+   ```bash
+   steamcmd +force_install_dir /path/to/il2dockerServer/il2-data \
+            +login your_steam_username \
+            +app_update <APPID> validate \
+            +quit
+   ```
+3. Enter your Steam password when prompted. If Steam Guard is enabled, you will also be asked for the code.
+
+### Option B — Copy from another machine
+
+Install the IL-2 dedicated server on a Windows or Linux PC and transfer the files to `il2-data/` using one of:
+
+**SCP (SSH):**
 ```bash
-cp -r /path/to/your/il2-installation/* il2-data/
+# Run this on the source machine (Windows path example):
+scp -r "C:\path\to\il2-server\*" user@your-linux-ip:/path/to/il2dockerServer/il2-data/
 ```
 
-The final structure should be:
+**Google Drive / cloud sync:**
+Zip the installation folder, upload to Drive, download on the Linux machine and extract into `il2-data/`.
+
+**Network share / USB:**
+Copy via any shared folder or external drive, then move the contents into `il2-data/`.
+
+---
+
+After either option, `il2-data/` should look like this:
 
 ```
 il2dockerServer/
 ├── il2-data/
 │   ├── bin/
 │   │   └── game/
-│   │       ├── DServer.exe
-│   │       └── *.dll
+│   │       ├── DServer.exe       ← the server binary
+│   │       └── *.dll             ← game DLLs (RSE.dll, etc.)
 │   ├── data/
 │   │   └── Multiplayer/
-│   │       ├── Dogfight/
-│   │       └── Cooperative/
+│   │       ├── Dogfight/         ← put your .Mission files here
+│   │       └── Cooperative/      ← put your .Mission files here
 │   └── ...
 ├── Dockerfile
 ├── docker-compose.yml
@@ -120,7 +94,7 @@ il2dockerServer/
 
 ---
 
-## Step 4 — Configure docker-compose.yml
+## Step 3 — Configure docker-compose.yml
 
 Open `docker-compose.yml` and set these two environment variables:
 
@@ -133,7 +107,7 @@ environment:
 
 ---
 
-## Step 5 — Build the Docker Image
+## Step 4 — Build the Docker Image
 
 ```bash
 docker compose -f docker-compose.yml build
@@ -143,7 +117,7 @@ This takes several minutes on the first run — it installs Wine, sets up the Wi
 
 ---
 
-## Step 6 — Start the Container
+## Step 5 — Start the Container
 
 ```bash
 docker compose -f docker-compose.yml up -d
@@ -155,11 +129,11 @@ Then open the web UI in your browser:
 http://<your-machine-ip>:8080
 ```
 
-Log in with the credentials set in Step 4 (default: `admin` / `changeme`).
+Log in with the credentials set in Step 3 (default: `admin` / `changeme`).
 
 ---
 
-## Step 7 — Configure the Server
+## Step 6 — Configure the Server
 
 In the web UI, go to the **Config** tab and fill in:
 
@@ -178,7 +152,7 @@ Click **Save Configuration**. This creates `il2-data/data/server.sds`.
 
 ---
 
-## Step 8 — Add Missions
+## Step 7 — Add Missions
 
 In the web UI, go to the **Missions** tab:
 
@@ -191,7 +165,7 @@ Click **Save Mission Rotation** when done.
 
 ---
 
-## Step 9 — Open Router Ports
+## Step 8 — Open Router Ports
 
 For players outside your local network to connect, forward these ports on your router to the server machine's LAN IP:
 
@@ -202,7 +176,7 @@ For players outside your local network to connect, forward these ports on your r
 
 ---
 
-## Step 10 — Start the Server
+## Step 9 — Start the Server
 
 Click **Start Server** in the web UI. The server will:
 
