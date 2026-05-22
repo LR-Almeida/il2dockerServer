@@ -27,12 +27,40 @@ A Docker-based dedicated server for **IL-2 Great Battles** with a built-in Flask
 
 ## Step 1 — Get the IL-2 Dedicated Server Files
 
-The IL-2 dedicated server is a standalone package separate from the game client.
+The IL-2 dedicated server files can be obtained in two ways. You will need a licensed IL-2 Great Battles account regardless of which method you choose.
 
-1. Go to the official IL-2 website: **https://il2sturmovik.com/download/**
-2. Download the **Dedicated Server** package for your version (e.g. Battle of Stalingrad, Flying Circus, etc.)
-3. Run the installer or extract the archive — this produces a folder with `bin/`, `data/`, and other game directories
-4. You will need to own a license for the content you want to host (maps, aircraft)
+### Option A — Download directly with SteamCMD (Linux)
+
+This downloads the server files straight into `il2-data/` without needing a Windows machine.
+
+1. Install SteamCMD:
+   ```bash
+   sudo apt-get install steamcmd
+   ```
+2. Run SteamCMD and download the dedicated server (replace `<APPID>` with your IL-2 title's dedicated server App ID, found on SteamDB):
+   ```bash
+   steamcmd +force_install_dir /path/to/il2dockerServer/il2-data \
+            +login your_steam_username \
+            +app_update <APPID> validate \
+            +quit
+   ```
+3. Enter your Steam password when prompted. If Steam Guard is enabled, you'll also be asked for the code.
+
+### Option B — Download on Windows, then copy to Linux
+
+1. Install the IL-2 dedicated server on a Windows PC via Steam or the official installer
+2. Copy the installation folder to your Linux machine using one of:
+
+   **SCP (SSH):**
+   ```bash
+   scp -r "C:\path\to\il2-server\*" user@your-linux-ip:/path/to/il2dockerServer/il2-data/
+   ```
+
+   **Google Drive / cloud sync:**
+   Zip the installation folder, upload to Drive, download on the Linux machine and extract into `il2-data/`.
+
+   **Network share / USB:**
+   Copy via any shared folder or external drive, then move the contents into `il2-data/`.
 
 The resulting folder structure looks like this:
 
@@ -170,7 +198,7 @@ For players outside your local network to connect, forward these ports on your r
 | Port | Protocol | Purpose |
 |------|----------|---------|
 | 28000 | TCP + UDP | Game traffic |
-| 28100 | TCP + UDP | File downloads (skins, missions) |
+| 28100 | TCP | File downloads (skins, missions) |
 
 ---
 
@@ -252,7 +280,7 @@ docker builder prune -f
 → This is usually a temporary issue on first mission load. The entrypoint auto-sets `ServerIP` to the correct LAN IP at startup. Restart the server via the web UI.
 
 **Can't connect from outside the LAN**
-→ Double-check router port forwarding for ports 28000 and 28100 (TCP + UDP). Verify with an external port checker tool.
+→ Double-check router port forwarding: 28000 TCP+UDP and 28100 TCP. Verify with an external port checker tool.
 
 **Container won't start**
 → Check logs: `docker logs il2-gb-server`
